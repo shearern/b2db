@@ -1,2 +1,4 @@
-# b2db
+BackBlaze DB
+============
+
 Database built on BackBlaze
