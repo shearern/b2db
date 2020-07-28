@@ -1,5 +1,4 @@
 from .db import B2Database
-from .table import B2Table
-from .record import B2Record
-from .field_types import B2FieldTypes
+from .table import Table
 
+from .field_types import NativeField, CharField, IntField, DatetimeField
