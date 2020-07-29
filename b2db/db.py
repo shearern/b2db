@@ -1,13 +1,15 @@
 import os
 import json
 import re
+from mimetypes import guess_type
 
 from b2sdk.v1 import B2Api
 from b2sdk.v1 import InMemoryAccountInfo, SqliteAccountInfo
-from b2sdk.v1 import DownloadDestBytes
+from b2sdk.v1 import DownloadDestBytes, DownloadDestLocalFile
 from b2sdk.exception import FileNotPresent
 
 from .table import Table
+from .file import normalize_b2_path
 
 
 class NotAModelAttribute(Exception): pass
@@ -254,3 +256,71 @@ class B2Database(object):
             m = self.RECORD_DATA_PAT.match(file_path)
             if m:
                 yield m.group(1)
+
+
+    def upload_file(self, path, target, content_type=None):
+        '''
+        Upload a file into the database
+
+        :param path: Path to read file from
+        :param target: Target to write file to
+        :param content_type: Content Type to set on file
+        :return: B2 file object uploaded
+        '''
+
+        # Apply prefix
+        if self.__prefix:
+            target = self.__prefix + '/' + target
+
+        # Upload file
+        if content_type:
+            b2obj = self.__bucket.upload_local_file(
+                local_file = path,
+                file_name = target,
+                content_type = content_type)
+        else:
+            b2obj = self.__bucket.upload_local_file(
+                local_file = path,
+                file_name = target)
+
+        # Cache
+        print("TODO: Update cache")
+
+        return b2obj
+
+
+    def download_file(self, path, name=None, file_id=None):
+        '''
+        Upload a file into the database
+
+        :param name: Path to file to download (specify name or file_id)
+        :param file_id: File ID to download (specify name or file_id)
+        :param path: Local path to write to
+        :return:
+            B2 file info.  Example:
+            [fileId]:            '4_z9054c0781f4f079173300413_f116c051d4d126a9f_d20200720_m171424_c002_v0001133_t0012'
+            [fileName]:          'unittests/test-0/people/sue.record'
+            [contentType]:       'application/json'
+            [contentLength]:     70
+            [contentSha1]:       '2132096d380776b2ffc5dcb34d48a41cd5cfabdd'
+            [fileInfo]:          {}
+        '''
+
+        if name and not file_id:
+            # Apply prefix
+            if self.__prefix:
+                name = self.__prefix + '/' + name
+                file_info = self.__bucket.download_file_by_name(
+                    file_name = name,
+                    download_dest = DownloadDestLocalFile(path))
+        elif file_id and not name:
+            file_info = self.__bucket.download_file_by_id(
+                file_id = file_id,
+                download_dest=DownloadDestLocalFile(path))
+        else:
+            raise ValueError("Specify name xor file_id")
+
+        # Cache
+        print("TODO: Update cache")
+
+        return file_info

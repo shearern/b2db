@@ -33,6 +33,11 @@ class Model(object):
         return self.__key
 
 
+    @property
+    def _table(self):
+        return self.__table
+
+
     def __getitem__(self, key):
         '''Access the raw data (decoded JSON) for a given attribute.  None if doesn't exist'''
         try:
